@@ -1,0 +1,39 @@
+project:
+  name: dual_tmc2209
+  version: 0.1.0
+
+instances:
+  controller:
+    component: ESP32_S3_ETH_POE
+  turntable:
+    component: TMC2209
+    uart_address: 0
+  camera_slide:
+    component: TMC2209
+    uart_address: 1
+
+connections:
+  - controller.GPIO38 -> turntable.STEP
+  - controller.GPIO39 -> turntable.DIR
+  - controller.GPIO1 -> camera_slide.STEP
+  - controller.GPIO18 -> camera_slide.DIR
+
+buses:
+  uart:
+    members:
+      - controller.GPIO40
+      - turntable.UART
+      - camera_slide.UART
+
+power:
+  3V3:
+    - controller.3V3
+    - turntable.VDD
+    - camera_slide.VDD
+  24V:
+    - turntable.VM
+    - camera_slide.VM
+  GND:
+    - controller.GND
+    - turntable.GND
+    - camera_slide.GND
