@@ -20,7 +20,7 @@ extensions = [
 ]
 autosummary_generate = True
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "examples/*"]
+exclude_patterns = ["_build"]
 
 html_theme = "sphinx_book_theme"
 html_logo = "_static/circuitspec-logo.svg"
@@ -32,7 +32,7 @@ html_theme_options = {
 }
 
 sphinx_gallery_conf = {
-    "examples_dirs": "examples",
+    "examples_dirs": "../examples",
     "gallery_dirs": "generated/gallery",
     "filename_pattern": r"plot_",
     "remove_config_comments": True,

@@ -62,4 +62,7 @@ Executable example
 
 The :doc:`gallery example <../generated/gallery/index>` loads the shared dual
 driver YAML, validates it, and exercises the DOT, JSON, and SVG renderers when
-Sphinx builds the documentation.
+Sphinx builds the documentation. It displays the rendered graph and complete
+netlist JSON alongside their generating code. Rendering the graph requires
+Graphviz to be installed separately, with its ``dot`` executable on ``PATH``;
+the Python wrapper is included in the ``docs`` extra.
