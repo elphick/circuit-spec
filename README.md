@@ -32,3 +32,13 @@ Connections, multi-member buses, and named power nets are checked against the
 component ports. Graph output is Graphviz DOT; netlists are JSON.
 The SVG stripboard view is an illustrative connectivity map, not a manufacturing-ready
 layout; verify clearances, cuts, and component footprints before building hardware.
+
+## Documentation
+
+The user guide, glossary, and executable example gallery are available in the
+[documentation](docs/index.rst). Build the HTML site with:
+
+```bash
+uv sync --extra docs
+uv run sphinx-build -b html docs docs/_build/html
+```
