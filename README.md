@@ -36,7 +36,10 @@ layout; verify clearances, cuts, and component footprints before building hardwa
 ## Documentation
 
 The user guide, glossary, and executable example gallery are available in the
-[documentation](docs/index.rst). Build the HTML site with:
+[documentation](docs/index.rst). Gallery scripts and their shared YAML
+specifications live together in [`examples/`](examples/). The scripts execute
+during the documentation build. Install Graphviz separately and ensure its
+`dot` executable is on `PATH` to render the example graph. Build the HTML site with:
 
 ```bash
 uv sync --extra docs
