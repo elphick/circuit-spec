@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96" role="img" aria-labelledby="title description">
+  <title id="title">CircuitSpec</title>
+  <desc id="description">Placeholder logo showing a circuit trace in the shape of a C.</desc>
+  <rect width="360" height="96" rx="14" fill="#102a43"/>
+  <g fill="none" stroke="#62d0c6" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
+    <path d="M75 26a30 30 0 1 0 0 44M75 26h18v14M75 70h18V56"/>
+    <path d="M93 40h14M93 56h14"/>
+  </g>
+  <g fill="#62d0c6">
+    <circle cx="111" cy="40" r="5"/>
+    <circle cx="111" cy="56" r="5"/>
+  </g>
+  <text x="132" y="58" fill="#fff" font-family="sans-serif" font-size="29" font-weight="600">CircuitSpec</text>
+</svg>
