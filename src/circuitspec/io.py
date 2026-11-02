@@ -31,7 +31,8 @@ _UniqueKeyLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping
 )
 
-_ENDPOINT = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*)\.([A-Za-z_][A-Za-z0-9_-]*)$")
+_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
+_ENDPOINT = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*)\.([A-Za-z0-9_][A-Za-z0-9_-]*)$")
 _CONNECTION = re.compile(r"^\s*(.+?)\s*->\s*(.+?)\s*$")
 
 
@@ -68,8 +69,8 @@ def load_project(path: str | Path) -> Project:
     instances_raw = _mapping(raw.get("instances"), "instances")
     instances = {}
     for name, definition in instances_raw.items():
-        if not isinstance(name, str) or not name:
-            raise SpecError("instance names must be non-empty strings")
+        if not isinstance(name, str) or not _IDENTIFIER.fullmatch(name):
+            raise SpecError(f"invalid instance name: {name!r}")
         definition = _mapping(definition, f"instance {name}")
         component = definition.get("component")
         if not isinstance(component, str) or not component:
@@ -93,13 +94,20 @@ def load_project(path: str | Path) -> Project:
         connections.append(Connection(_endpoint(source), _endpoint(target)))
 
     buses_raw = _mapping(raw.get("buses", {}), "buses")
-    buses = {
-        name: _members(_mapping(definition, f"bus {name}").get("members"), f"bus {name}")
-        for name, definition in buses_raw.items()
-    }
+    buses = {}
+    for name, definition in buses_raw.items():
+        if not isinstance(name, str) or not name:
+            raise SpecError("bus names must be non-empty strings")
+        buses[name] = _members(
+            _mapping(definition, f"bus {name}").get("members"), f"bus {name}"
+        )
 
     power_raw = _mapping(raw.get("power", {}), "power")
-    power = {name: _members(members, f"power net {name}") for name, members in power_raw.items()}
+    power = {}
+    for name, members in power_raw.items():
+        if not isinstance(name, str) or not name:
+            raise SpecError("power net names must be non-empty strings")
+        power[name] = _members(members, f"power net {name}")
 
     return Project(
         name=str(metadata.get("name", Path(path).stem)),

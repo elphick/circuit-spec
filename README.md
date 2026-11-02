@@ -17,15 +17,18 @@ connections:
   - controller.GPIO38 -> driver.STEP
 ```
 
-Install the package and validate or export the included example:
+Install the package with UV and validate or export the included example:
 
 ```bash
-python -m pip install -e .
-circuitspec validate examples/dual_tmc2209.yaml
-circuitspec render graph examples/dual_tmc2209.yaml -o circuit.dot
-circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.json
+uv sync
+uv run circuitspec validate examples/dual_tmc2209.yaml
+uv run circuitspec render graph examples/dual_tmc2209.yaml -o circuit.dot
+uv run circuitspec render stripboard examples/dual_tmc2209.yaml -o stripboard.svg
+uv run circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.json
 ```
 
 The initial built-in library contains `ESP32_S3_ETH_POE` and `TMC2209`.
 Connections, multi-member buses, and named power nets are checked against the
 component ports. Graph output is Graphviz DOT; netlists are JSON.
+The SVG stripboard view is an illustrative connectivity map, not a manufacturing-ready
+layout; verify clearances, cuts, and component footprints before building hardware.

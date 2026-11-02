@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from circuitspec.io import SpecError, load_project
-from circuitspec.renderers import to_dot, to_netlist
+from circuitspec.renderers import to_dot, to_netlist, to_stripboard_svg
 from circuitspec.validation import validate
 
 
@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     validate_command = commands.add_parser("validate", help="validate a YAML project")
     validate_command.add_argument("project")
     graph_command = commands.add_parser("render", help="render a project")
-    graph_command.add_argument("format", choices=["graph"])
+    graph_command.add_argument("format", choices=["graph", "stripboard"])
     graph_command.add_argument("project")
     graph_command.add_argument("-o", "--output")
     export_command = commands.add_parser("export", help="export a project")
@@ -41,7 +41,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "validate":
             print(f"Valid: {project.name} ({len(project.instances)} components)")
         elif args.command == "render":
-            _write(args.output, to_dot(project))
+            renderers = {"graph": to_dot, "stripboard": to_stripboard_svg}
+            _write(args.output, renderers[args.format](project))
         else:
             _write(args.output, json.dumps(to_netlist(project), indent=2) + "\n")
     except (OSError, SpecError) as exc:
