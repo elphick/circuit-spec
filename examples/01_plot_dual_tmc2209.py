@@ -3,10 +3,9 @@ Dual TMC2209 motion controller
 ==============================
 
 Load the same YAML project used by the command-line examples, validate its
-typed connections, and inspect its graph and export representations.
+typed nets, and inspect its graph and export representations.
 """
 
-import json
 from pathlib import Path
 
 import yaml
@@ -53,9 +52,9 @@ specification = yaml.safe_load(example_path.read_text(encoding="utf-8"))
 print(yaml.safe_dump(specification, sort_keys=False), end="")
 
 # %%
-# Validate the connections
+# Validate the netlist
 # ------------------------
-# Check the component ports and net connections before generating outputs.
+# Check the component ports and net endpoints before generating outputs.
 
 errors = validate(project)
 if errors:
@@ -67,8 +66,7 @@ print(f"Validated {project.name}: {len(project.instances)} components")
 # Export a DOT graph
 # ------------------
 # The graph describes the components and their connections in Graphviz format.
-# Solid edges show port-to-port connections, dashed edges show the UART bus,
-# and red edges show shared power nets.
+# Edges show undirected connectivity between component instances.
 
 dot = to_dot(project)
 print(dot)
@@ -89,19 +87,16 @@ DisplaySVG(Source(dot).pipe(format="svg", encoding="utf-8"))
 # Each net is a set of ports that should be electrically connected, rather than
 # a physical routing plan:
 #
-# * ``project`` contains the project name and version.
-# * ``components`` maps each instance's ``reference`` to its component type.
-# * ``nets`` lists each net's ``name`` and ``members`` in ``instance.port`` form.
+# * ``nets`` maps each net name to its ``instance.port`` endpoint references.
 #
-# ``NET_1`` through ``NET_4`` come from the explicit port-to-port connections.
-# ``uart`` comes from the shared bus; ``3V3``, ``24V``, and ``GND`` come from
-# the power definitions. The three components and all eight nets are shown
+# Each named net in the source YAML remains intact in the exported netlist.
+# The three components and all eight nets are shown
 # below. UART addresses remain in the YAML; they are not exported in this
 # connectivity-only netlist.
 
 netlist = to_netlist(project)
 print(f"Netlist contains {len(netlist['nets'])} nets.")
-print(json.dumps(netlist, indent=2))
+print(yaml.safe_dump(netlist, sort_keys=False), end="")
 
 # %%
 # Generate an illustrative stripboard map

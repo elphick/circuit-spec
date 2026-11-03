@@ -17,16 +17,10 @@ output, or bidirectional. An instance exposes the ports defined for its
 component. For example, ``turntable.STEP`` refers to the ``STEP`` port of the
 ``turntable`` instance.
 
-Connections and nets
---------------------
+Nets
+----
 
-A **connection** joins two endpoints. The shorthand
-``controller.GPIO38 -> turntable.STEP`` describes a one-to-one connection.
-The arrow is legacy input syntax, not signal-flow semantics: electrical
-connectivity and graph edges are undirected. Multiple connections may share a
-port; each pair is displayed as an automatically named net (``NET_1``, etc.).
-
-A **net** groups two or more terminals that are electrically connected:
+A **net** groups two or more endpoints that are electrically connected:
 
 .. code-block:: yaml
 
@@ -34,27 +28,17 @@ A **net** groups two or more terminals that are electrically connected:
      A_STEP: [controller.GPIO38, turntable.STEP]
      UART: [controller.GPIO40, turntable.UART, camera_slide.UART]
 
-These are ordinary named nets. To give a bus its distinct graph styling and
-bus-specific validation, declare it explicitly under ``buses`` instead:
-
-.. code-block:: yaml
-
-   buses:
-     UART:
-       members: [controller.GPIO40, turntable.UART, camera_slide.UART]
-
-A **bus** and a **power net** each group two or more endpoints under one name.
-Use buses for shared links such as UART, and power nets for common rails such as
-``3V3``, ``24V``, or ``GND``. These named groups are included in graph and
-netlist output.
+Signal, bus, and power connectivity all use the same ``nets`` mapping. Port
+types determine their validation and graph styling; names such as ``UART``,
+``3V3``, ``24V``, and ``GND`` remain ordinary net names.
 
 Typed port graph
 ----------------
 
-CircuitSpec models a design as a graph whose vertices are component ports rather
-than just component boxes. This lets validation check that an endpoint exists,
-that the port belongs to the named component, and that connected port types and
-directions are sensible according to the built-in definitions.
+CircuitSpec models a design as named nets containing component-port endpoints.
+Validation checks that an endpoint exists, that the port belongs to the named
+component, and that each net contains compatible port types according to the
+built-in definitions.
 
 This validation is structural. It does not calculate voltage, current, timing,
 signal integrity, or whether the chosen hardware is safe for a particular

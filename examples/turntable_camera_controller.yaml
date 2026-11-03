@@ -15,11 +15,7 @@ nets:
   B_STEP: [controller.GPIO1, camera_slide.STEP]
   B_DIR: [controller.GPIO18, camera_slide.DIR]
 
-buses:
-  UART:
-    members: [controller.GPIO40, turntable.UART, camera_slide.UART]
-
-power:
+  UART: [controller.GPIO40, turntable.UART, camera_slide.UART]
   24V: [turntable.VM, camera_slide.VM]
   3V3: [controller.3V3, turntable.VDD, camera_slide.VDD]
   GND: [controller.GND, turntable.GND, camera_slide.GND]
