@@ -22,8 +22,26 @@ Connections and nets
 
 A **connection** joins two endpoints. The shorthand
 ``controller.GPIO38 -> turntable.STEP`` describes a one-to-one connection.
-Multiple connections may use the same component but each one remains an
-individual pair in the current graph model.
+The arrow is legacy input syntax, not signal-flow semantics: electrical
+connectivity and graph edges are undirected. Multiple connections may share a
+port; each pair is displayed as an automatically named net (``NET_1``, etc.).
+
+A **net** groups two or more terminals that are electrically connected:
+
+.. code-block:: yaml
+
+   nets:
+     A_STEP: [controller.GPIO38, turntable.STEP]
+     UART: [controller.GPIO40, turntable.UART, camera_slide.UART]
+
+These are ordinary named nets. To give a bus its distinct graph styling and
+bus-specific validation, declare it explicitly under ``buses`` instead:
+
+.. code-block:: yaml
+
+   buses:
+     UART:
+       members: [controller.GPIO40, turntable.UART, camera_slide.UART]
 
 A **bus** and a **power net** each group two or more endpoints under one name.
 Use buses for shared links such as UART, and power nets for common rails such as

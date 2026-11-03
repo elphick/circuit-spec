@@ -93,6 +93,13 @@ def load_project(path: str | Path) -> Project:
             raise SpecError("connections must be strings or from/to mappings")
         connections.append(Connection(_endpoint(source), _endpoint(target)))
 
+    nets_raw = _mapping(raw.get("nets", {}), "nets")
+    nets = {}
+    for name, members in nets_raw.items():
+        if not isinstance(name, str) or not name:
+            raise SpecError("net names must be non-empty strings")
+        nets[name] = _members(members, f"net {name}")
+
     buses_raw = _mapping(raw.get("buses", {}), "buses")
     buses = {}
     for name, definition in buses_raw.items():
@@ -116,4 +123,5 @@ def load_project(path: str | Path) -> Project:
         connections=connections,
         buses=buses,
         power=power,
+        nets=nets,
     )

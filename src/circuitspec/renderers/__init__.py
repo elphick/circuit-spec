@@ -1,8 +1,11 @@
-"""Simple machine-readable graph renderers."""
+"""Renderers consuming validated CircuitSpec projects."""
 
 from html import escape
 
 from circuitspec.models import Project
+from circuitspec.renderers.plotly_graph import render_graph
+
+__all__ = ["render_graph", "to_dot", "to_netlist", "to_stripboard_svg"]
 
 
 def _connection_nets(project: Project) -> list[tuple[str, list[str]]]:
@@ -10,6 +13,7 @@ def _connection_nets(project: Project) -> list[tuple[str, list[str]]]:
         (f"NET_{index}", [str(connection.source), str(connection.target)])
         for index, connection in enumerate(project.connections, start=1)
     ]
+    nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.nets.items())
     nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.buses.items())
     nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.power.items())
     return nets
@@ -34,6 +38,12 @@ def to_dot(project: Project) -> str:
             f"[label={_dot_quote(f'{connection.source.port} - {connection.target.port}')}, "
             f'id="connection{index}"];'
         )
+    for net, members in project.nets.items():
+        for endpoint in members[1:]:
+            lines.append(
+                f"  {_dot_quote(members[0].instance)} -- {_dot_quote(endpoint.instance)} "
+                f"[label={_dot_quote(net)}];"
+            )
     for bus, members in project.buses.items():
         for endpoint in members[1:]:
             lines.append(

@@ -20,7 +20,7 @@ extensions = [
 ]
 autosummary_generate = True
 templates_path = ["_templates"]
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "examples/GALLERY_HEADER.rst"]
 
 html_theme = "sphinx_book_theme"
 html_logo = "_static/circuitspec-logo.svg"
@@ -32,8 +32,9 @@ html_theme_options = {
 }
 
 sphinx_gallery_conf = {
-    "examples_dirs": "../examples",
-    "gallery_dirs": "generated/gallery",
-    "filename_pattern": r"plot_",
+    "examples_dirs": ["../examples", "examples"],
+    "gallery_dirs": ["generated/gallery", "generated/plotly"],
+    "filename_pattern": r"(plot_|plotly_graph_renderer)",
+    "copyfile_regex": r".*\.yaml",
     "remove_config_comments": True,
 }

@@ -1,0 +1,25 @@
+project:
+  name: turntable_camera_controller
+
+instances:
+  controller:
+    component: ESP32_S3_ETH_POE
+  turntable:
+    component: TMC2209
+  camera_slide:
+    component: TMC2209
+
+nets:
+  A_STEP: [controller.GPIO38, turntable.STEP]
+  A_DIR: [controller.GPIO39, turntable.DIR]
+  B_STEP: [controller.GPIO1, camera_slide.STEP]
+  B_DIR: [controller.GPIO18, camera_slide.DIR]
+
+buses:
+  UART:
+    members: [controller.GPIO40, turntable.UART, camera_slide.UART]
+
+power:
+  24V: [turntable.VM, camera_slide.VM]
+  3V3: [controller.3V3, turntable.VDD, camera_slide.VDD]
+  GND: [controller.GND, turntable.GND, camera_slide.GND]

@@ -11,7 +11,7 @@ once, validate the typed port graph, and use that specification as the starting
 point for circuit artifacts.
 
 CircuitSpec is an early-stage tool. The current release supports YAML projects,
-basic connectivity validation, DOT graph output, JSON netlists, and an
+basic connectivity validation, interactive Plotly graphs, DOT output, JSON netlists, and an
 illustrative stripboard connection map. Its renderings are not manufacturing
 outputs; review all hardware designs before building them.
 
@@ -29,6 +29,7 @@ outputs; review all hardware designs before building them.
    :caption: Examples
 
    generated/gallery/index
+   generated/plotly/index
 
 .. toctree::
    :maxdepth: 1

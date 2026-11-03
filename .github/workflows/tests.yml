@@ -19,4 +19,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --frozen
+      - name: Install Chrome for Kaleido image export
+        run: uv run --frozen plotly_get_chrome -y
       - run: uv run --frozen python -m unittest discover -s tests -v
