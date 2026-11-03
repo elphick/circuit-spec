@@ -8,7 +8,13 @@ import yaml
 
 from circuitspec.io import SpecError, load_project
 from circuitspec.models import Project
-from circuitspec.renderers import render_graph, to_dot, to_netlist, to_stripboard_svg
+from circuitspec.renderers import (
+    render_graph,
+    to_dot,
+    to_kicad_sch,
+    to_netlist,
+    to_stripboard_svg,
+)
 from circuitspec.validation import validate
 
 
@@ -43,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     graph_command.add_argument("--png", help="also export a graph PNG using Kaleido")
     graph_command.add_argument("--svg", help="also export a graph SVG using Kaleido")
     export_command = commands.add_parser("export", help="export a project")
-    export_command.add_argument("format", choices=["netlist"])
+    export_command.add_argument("format", choices=["netlist", "kicad"])
     export_command.add_argument("project")
     export_command.add_argument("-o", "--output")
     args = parser.parse_args(argv)
@@ -64,9 +70,13 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 renderers = {"dot": to_dot, "stripboard": to_stripboard_svg}
                 _write(args.output, renderers[args.format](project))
-        else:
+        elif args.format == "netlist":
             _write(args.output, yaml.safe_dump(to_netlist(project), sort_keys=False))
-    except (OSError, SpecError, RuntimeError) as exc:
+        else:
+            output = Path(args.output) if args.output else Path("artifacts/project.kicad_sch")
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(to_kicad_sch(project), encoding="utf-8")
+    except (OSError, SpecError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     return 0

@@ -12,7 +12,7 @@ import yaml
 from graphviz import Source
 
 from circuitspec.io import load_project
-from circuitspec.renderers import to_dot, to_netlist, to_stripboard_svg
+from circuitspec.renderers import to_dot, to_kicad_sch, to_netlist, to_stripboard_svg
 from circuitspec.validation import validate
 
 
@@ -107,3 +107,17 @@ print(yaml.safe_dump(netlist, sort_keys=False), end="")
 stripboard_svg = to_stripboard_svg(project)
 print(f"Illustrative stripboard SVG contains {stripboard_svg.count('<circle')} pad markers.")
 DisplaySVG(stripboard_svg)
+
+# %%
+# Generate a KiCad schematic
+# --------------------------
+# The same validated connectivity can be exported as a self-contained
+# schematic. The CLI writes this content to ``artifacts/project.kicad_sch``;
+# the Python API returns it as text.
+
+kicad_schematic = to_kicad_sch(project)
+print(
+    f"KiCad schematic: {len(project.instances)} components, "
+    f"{len(project.nets)} named nets, {len(kicad_schematic)} characters."
+)
+print("\n".join(line.strip() for line in kicad_schematic.splitlines() if "(global_label " in line))

@@ -27,6 +27,7 @@ uv run circuitspec render graph examples/dual_tmc2209.yaml --png artifacts/proje
 uv run circuitspec render dot examples/dual_tmc2209.yaml -o circuit.dot
 uv run circuitspec render stripboard examples/dual_tmc2209.yaml -o stripboard.svg
 uv run circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.yaml
+uv run circuitspec export kicad examples/turntable_camera_controller.yaml
 ```
 
 The initial built-in library contains `ESP32_S3_ETH_POE` and `TMC2209`.
@@ -41,6 +42,11 @@ Kaleido exports PNG/SVG and requires Chrome; if needed, run
 require Chrome. DOT export remains available with `render dot`; netlists are YAML.
 The SVG stripboard view is an illustrative connectivity map, not a manufacturing-ready
 layout; verify clearances, cuts, and component footprints before building hardware.
+KiCad export writes a self-contained schematic to `artifacts/project.kicad_sch`;
+open it in KiCad to continue
+schematic editing and board design. The generated schematic uses logical
+connectivity labels and schematic symbols only, and is not a PCB or
+manufacturing output.
 
 ## Documentation
 

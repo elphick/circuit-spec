@@ -4,9 +4,17 @@ from html import escape
 
 from circuitspec.components import COMPONENTS
 from circuitspec.models import Endpoint, Project
+from circuitspec.renderers.kicad import KicadExportError, to_kicad_sch
 from circuitspec.renderers.plotly_graph import render_graph
 
-__all__ = ["render_graph", "to_dot", "to_netlist", "to_stripboard_svg"]
+__all__ = [
+    "KicadExportError",
+    "render_graph",
+    "to_dot",
+    "to_kicad_sch",
+    "to_netlist",
+    "to_stripboard_svg",
+]
 
 
 def _project_nets(project: Project) -> list[tuple[str, list[str]]]:

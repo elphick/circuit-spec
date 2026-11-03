@@ -1,10 +1,21 @@
+import os
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
+from circuitspec.components import COMPONENTS
+from circuitspec.cli import main
 from circuitspec.io import SpecError, load_project
 from circuitspec.models import Endpoint, Net, Project
-from circuitspec.renderers import to_dot, to_netlist, to_stripboard_svg
+from circuitspec.renderers import (
+    KicadExportError,
+    to_dot,
+    to_kicad_sch,
+    to_netlist,
+    to_stripboard_svg,
+)
 from circuitspec.validation import validate
 
 
@@ -87,6 +98,69 @@ class TestCircuitSpec(unittest.TestCase):
         self.assertIn("controller", layout)
         self.assertIn("GPIO38", layout)
         self.assertEqual(netlist["nets"]["A_STEP"], ["controller.GPIO38", "turntable.STEP"])
+
+    def test_kicad_export_contains_symbols_and_named_net_labels(self):
+        project = load_project(ROOT / "examples/turntable_camera_controller.yaml")
+
+        schematic = to_kicad_sch(project)
+
+        self.assertIn("(version 20231120)", schematic)
+        self.assertIn('"RF_Module:ESP32"', schematic)
+        self.assertIn('"Driver_Motor:TMC2209"', schematic)
+        self.assertIn('(global_label "A_STEP"', schematic)
+        self.assertIn('(global_label "UART"', schematic)
+        self.assertIn('(reference "U1")', schematic)
+        self.assertIn('(reference "U3")', schematic)
+
+    def test_kicad_export_rejects_missing_component_port_mapping(self):
+        project = load_project(EXAMPLE)
+        component = COMPONENTS["TMC2209"]
+        incomplete = replace(component, symbol_pins={})
+
+        with patch.dict(COMPONENTS, {"TMC2209": incomplete}):
+            with self.assertRaisesRegex(KicadExportError, "no KiCad pin mapping"):
+                to_kicad_sch(project)
+
+    def test_kicad_export_rejects_unknown_symbol(self):
+        project = load_project(EXAMPLE)
+        component = COMPONENTS["TMC2209"]
+        unsupported = replace(component, symbol="")
+
+        with patch.dict(COMPONENTS, {"TMC2209": unsupported}):
+            with self.assertRaisesRegex(KicadExportError, "unknown KiCad symbol"):
+                to_kicad_sch(project)
+
+    def test_kicad_export_cli_writes_turntable_schematic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "nested" / "turntable.kicad_sch"
+
+            result = main([
+                "export",
+                "kicad",
+                str(ROOT / "examples/turntable_camera_controller.yaml"),
+                "-o",
+                str(output),
+            ])
+
+            self.assertEqual(result, 0)
+            self.assertIn("(kicad_sch", output.read_text(encoding="utf-8"))
+
+    def test_kicad_export_cli_uses_default_artifact_path(self):
+        original_directory = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            try:
+                os.chdir(directory)
+                result = main([
+                    "export",
+                    "kicad",
+                    str(ROOT / "examples/turntable_camera_controller.yaml"),
+                ])
+            finally:
+                os.chdir(original_directory)
+
+            output = Path(directory) / "artifacts" / "project.kicad_sch"
+            self.assertEqual(result, 0)
+            self.assertTrue(output.is_file())
 
     def test_empty_and_duplicate_endpoint_nets_are_rejected(self):
         project = Project(

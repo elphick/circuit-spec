@@ -77,6 +77,23 @@ Export all nets and their endpoints as YAML:
 
 The exported mapping contains each net name and its ``instance.port`` endpoints.
 
+KiCad schematic
+---------------
+
+Export a validated project to an editable, self-contained KiCad schematic:
+
+.. code-block:: console
+
+   circuitspec export kicad examples/turntable_camera_controller.yaml
+
+The default output is ``artifacts/project.kicad_sch``. Override the destination
+with ``-o``. Component symbols are embedded in the schematic and named net
+labels preserve CircuitSpec connectivity. This export supports schematic work
+in KiCad; it does not generate footprints, a PCB layout, or manufacturing files.
+
+The :doc:`dual-driver gallery example <../generated/gallery/01_plot_dual_tmc2209>`
+also generates a KiCad schematic from its validated project using the Python API.
+
 Illustrative stripboard view
 ----------------------------
 
