@@ -35,7 +35,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../examples",
     "gallery_dirs": "generated/gallery",
     "within_subsection_order": "FileNameSortKey",
-    "filename_pattern": r"(plot_|plotly_graph_renderer)",
+    "filename_pattern": r".*\.py",
     "copyfile_regex": r".*\.yaml",
     "remove_config_comments": True,
     "image_scrapers": ("matplotlib", "plotly.io._sg_scraper.plotly_sg_scraper"),
