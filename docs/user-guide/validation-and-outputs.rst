@@ -95,11 +95,15 @@ and engineer the physical design independently before construction.
 Executable example
 ------------------
 
-The :doc:`Plotly gallery example <../generated/plotly/plotly_graph_renderer>`
+The :doc:`Plotly gallery example <../generated/gallery/plotly_graph_renderer>`
 loads YAML, validates it, saves offline HTML and PNG/SVG, and displays the
-interactive figure. Chrome must be available for its image exports.
+interactive figure with ``plotly.io.show``. Plotly's Sphinx-Gallery scraper
+generates a thumbnail using Kaleido, so Chrome must be available during the
+documentation build. The gallery figure loads Plotly JavaScript from a CDN;
+exported HTML embeds it for offline viewing. Outside documentation builds,
+``show`` uses your normal Plotly renderer.
 
-The :doc:`legacy gallery example <../generated/gallery/index>` loads the shared dual
+The :doc:`legacy gallery example <../generated/gallery/plot_dual_tmc2209>` loads the shared dual
 driver YAML, validates it, and exercises the DOT, JSON, and SVG renderers when
 Sphinx builds the documentation. It displays the rendered graph and complete
 netlist JSON alongside their generating code. Rendering the graph requires

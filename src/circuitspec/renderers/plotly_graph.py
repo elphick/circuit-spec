@@ -17,7 +17,7 @@ _POWER_COLORS = {
 }
 
 
-def _named_net_kind(project: Project, members: list[Endpoint]) -> str:
+def _net_kind(project: Project, members: list[Endpoint]) -> str:
     kinds = set()
     for endpoint in members:
         component = COMPONENTS.get(project.instances.get(endpoint.instance, ""))
@@ -49,11 +49,15 @@ def render_graph(project: Project) -> go.Figure:
         )
 
     nets = [
-        ("net", f"NET_{index}", [connection.source, connection.target])
+        (
+            _net_kind(project, [connection.source, connection.target]),
+            f"NET_{index}",
+            [connection.source, connection.target],
+        )
         for index, connection in enumerate(project.connections, start=1)
     ]
     nets.extend(
-        (_named_net_kind(project, members), name, members)
+        (_net_kind(project, members), name, members)
         for name, members in project.nets.items()
     )
     nets.extend(("bus", name, members) for name, members in project.buses.items())

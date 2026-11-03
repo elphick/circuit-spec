@@ -13,21 +13,11 @@ it is not already available.
 
 from pathlib import Path
 
-import plotly.graph_objects as go
+import plotly.io as pio
 
 from circuitspec.io import load_project
 from circuitspec.renderers import render_graph
 from circuitspec.validation import require_valid
-
-
-class DisplayGraph:
-    """Provide self-contained HTML to Sphinx Gallery without a CDN."""
-
-    def __init__(self, figure: go.Figure) -> None:
-        self.figure = figure
-
-    def _repr_html_(self) -> str:
-        return self.figure.to_html(include_plotlyjs=True, full_html=False)
 
 
 def find_specification() -> Path:
@@ -39,7 +29,7 @@ def find_specification() -> Path:
         for directory in (start, *start.parents):
             for relative in (
                 "turntable_camera_controller.yaml",
-                "docs/examples/turntable_camera_controller.yaml",
+                "examples/turntable_camera_controller.yaml",
             ):
                 candidate = directory / relative
                 if candidate.is_file():
@@ -74,6 +64,9 @@ figure.write_image(artifacts / "project_graph.svg")
 # Explore the graph
 # ------------------
 # No arrows or source/target styling are used: every member of a net is
-# electrically connected to the others.
+# electrically connected to the others. Plotly's Sphinx-Gallery scraper embeds
+# the interactive figure and uses Kaleido to generate its gallery thumbnail.
+# The gallery figure loads Plotly JavaScript from a CDN; the exported HTML
+# above works offline. Outside the documentation build, show uses your normal renderer.
 
-DisplayGraph(figure)
+pio.show(figure)

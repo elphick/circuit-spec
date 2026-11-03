@@ -29,7 +29,6 @@ outputs; review all hardware designs before building them.
    :caption: Examples
 
    generated/gallery/index
-   generated/plotly/index
 
 .. toctree::
    :maxdepth: 1

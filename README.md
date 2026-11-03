@@ -45,11 +45,13 @@ layout; verify clearances, cuts, and component footprints before building hardwa
 
 The user guide, glossary, and executable example gallery are available in the
 [documentation](docs/index.rst). Gallery scripts and their shared YAML
-specifications live in [`examples/`](examples/) and
-[`docs/examples/`](docs/examples/). The scripts execute
+specifications live together in [`examples/`](examples/). The scripts execute
 during the documentation build. Install Graphviz separately and ensure its
-`dot` executable is on `PATH` for the legacy DOT example, and install Chrome
-for the Plotly example's image exports. Build the HTML site with:
+`dot` executable is on `PATH` for the legacy DOT example. Chrome must be available
+for the Plotly example's image exports and gallery thumbnail; Kaleido uses an
+existing installation, or you can run `uv run plotly_get_chrome` if needed.
+The interactive gallery figure loads Plotly JavaScript from a CDN; exported HTML
+embeds it and works offline. Build the HTML site with:
 
 ```bash
 uv sync --extra docs

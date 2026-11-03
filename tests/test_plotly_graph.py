@@ -18,7 +18,7 @@ from circuitspec.validation import require_valid, validate
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXAMPLE = ROOT / "docs/examples/turntable_camera_controller.yaml"
+EXAMPLE = ROOT / "examples/turntable_camera_controller.yaml"
 
 
 class ScriptSources(HTMLParser):
@@ -139,6 +139,35 @@ class TestPlotlyGraph(unittest.TestCase):
                 figure = render_graph(project)
                 self.assertIsInstance(figure, go.Figure)
                 self.assertEqual(sum(len(trace.x) for trace in figure.data), len(instances))
+
+    def test_connection_net_types_match_named_net_types(self):
+        cases = [
+            ("signal", "GPIO38", "STEP", "net", "Net", "diamond"),
+            ("bus", "UART", "UART", "bus", "Bus", "diamond"),
+            ("power", "3V3", "VDD", "power", "Power Net", "square"),
+        ]
+        for label, left_port, right_port, kind, title, symbol in cases:
+            with self.subTest(kind=kind):
+                instances = {
+                    "left": "TMC2209" if label == "bus" else "ESP32_S3_ETH_POE",
+                    "right": "TMC2209",
+                }
+                members = [Endpoint("left", left_port), Endpoint("right", right_port)]
+                connection_project = Project(
+                    label, "0.1", instances,
+                    connections=[Connection(*members)],
+                )
+                named_project = Project(label, "0.1", instances, nets={"NET_1": members})
+                for project in (connection_project, named_project):
+                    require_valid(project)
+                figures = [render_graph(p) for p in (connection_project, named_project)]
+                traces = [
+                    next(trace for trace in figure.data if trace.meta["kind"] == kind)
+                    for figure in figures
+                ]
+                self.assertEqual(traces[0].to_plotly_json(), traces[1].to_plotly_json())
+                self.assertEqual(traces[0].marker.symbol, symbol)
+                self.assertIn(f"{title}: NET_1<br>Members: 2", traces[0].hovertext[0])
 
     def test_html_export_is_standalone(self):
         with tempfile.TemporaryDirectory() as directory:
