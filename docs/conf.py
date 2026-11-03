@@ -34,6 +34,9 @@ html_theme_options = {
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",
     "gallery_dirs": "generated/gallery",
-    "filename_pattern": r"plot_",
+    "within_subsection_order": "FileNameSortKey",
+    "filename_pattern": r".*\.py",
+    "copyfile_regex": r".*\.yaml",
     "remove_config_comments": True,
+    "image_scrapers": ("matplotlib", "plotly.io._sg_scraper.plotly_sg_scraper"),
 }

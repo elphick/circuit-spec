@@ -56,8 +56,10 @@ def validate(project: Project) -> list[str]:
             errors.append(f"duplicate connection: {connection.source} -> {connection.target}")
         seen_connections.add(edge)
 
-    named_nets = {}
+    named_nets = dict(project.nets)
     for bus_name, members in project.buses.items():
+        if bus_name in named_nets:
+            errors.append(f"duplicate net name: {bus_name}")
         named_nets[bus_name] = members
     for net_name, members in project.power.items():
         if net_name in named_nets:
@@ -73,6 +75,21 @@ def validate(project: Project) -> list[str]:
                     f"{endpoint} is assigned to multiple nets: {previous_net}, {net_name}"
                 )
             assigned_endpoints[endpoint] = net_name
+
+    for net_name, members in project.nets.items():
+        if len(members) < 2:
+            errors.append(f"net {net_name}: must contain at least two endpoints")
+        if len(set(members)) != len(members):
+            errors.append(f"net {net_name}: duplicate endpoint")
+        kinds = set()
+        for endpoint in members:
+            check_endpoint(endpoint, f"net {net_name}")
+            component = COMPONENTS.get(project.instances.get(endpoint.instance, ""))
+            port = component.ports.get(endpoint.port) if component else None
+            if port:
+                kinds.add("signal" if port.kind == "bus" else port.kind)
+        if len(kinds) > 1:
+            errors.append(f"net {net_name}: incompatible port types")
 
     for bus_name, members in project.buses.items():
         if len(members) < 2:

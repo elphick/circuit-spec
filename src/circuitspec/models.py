@@ -26,3 +26,4 @@ class Project:
     connections: list[Connection] = field(default_factory=list)
     buses: dict[str, list[Endpoint]] = field(default_factory=dict)
     power: dict[str, list[Endpoint]] = field(default_factory=dict)
+    nets: dict[str, list[Endpoint]] = field(default_factory=dict)
