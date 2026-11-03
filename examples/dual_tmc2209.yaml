@@ -12,20 +12,23 @@ instances:
     component: TMC2209
     uart_address: 1
 
-connections:
-  - controller.GPIO38 -> turntable.STEP
-  - controller.GPIO39 -> turntable.DIR
-  - controller.GPIO1 -> camera_slide.STEP
-  - controller.GPIO18 -> camera_slide.DIR
-
-buses:
-  uart:
-    members:
-      - controller.GPIO40
-      - turntable.UART
-      - camera_slide.UART
-
-power:
+nets:
+  A_STEP:
+    - controller.GPIO38
+    - turntable.STEP
+  A_DIR:
+    - controller.GPIO39
+    - turntable.DIR
+  B_STEP:
+    - controller.GPIO1
+    - camera_slide.STEP
+  B_DIR:
+    - controller.GPIO18
+    - camera_slide.DIR
+  UART:
+    - controller.GPIO40
+    - turntable.UART
+    - camera_slide.UART
   3V3:
     - controller.3V3
     - turntable.VDD

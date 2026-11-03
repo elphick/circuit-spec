@@ -10,9 +10,9 @@ Run validation from the repository root:
 
    circuitspec validate examples/dual_tmc2209.yaml
 
-The current validator checks that components and ports are known, connections
-use compatible port types and directions, bus and power members use appropriate
-port kinds, and named nets do not duplicate or reassign endpoints.
+The validator checks that components and ports are known, nets are non-empty
+and uniquely named, endpoints are not duplicated or assigned to multiple nets,
+and each net uses compatible port types.
 
 Validation does **not** yet check electrical limits, complete pin requirements,
 UART address conflicts, or manufacturing design rules. A successful result is
@@ -60,7 +60,7 @@ The Python API consumes an already validated project:
    fig.write_image("circuit.png")  # or circuit.svg
 
 ``render_graph`` does not parse or validate specifications. Connected ports are
-shown once per instance, including when several connections share a port;
+shown once per instance, including when they are listed in multiple nets;
 unconnected instances remain visible.
 
 Graphviz DOT output is still available via ``circuitspec render dot`` instead
@@ -69,14 +69,13 @@ of ``render graph``. The ``to_dot(project)`` Python API is unchanged.
 Netlist output
 --------------
 
-Export connections, buses, and power nets as JSON:
+Export all nets and their endpoints as YAML:
 
 .. code-block:: console
 
-   circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.json
+   circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.yaml
 
-The JSON contains project metadata, component references, and a list of named
-nets and their endpoint members.
+The exported mapping contains each net name and its ``instance.port`` endpoints.
 
 Illustrative stripboard view
 ----------------------------
@@ -104,8 +103,8 @@ exported HTML embeds it for offline viewing. Outside documentation builds,
 ``show`` uses your normal Plotly renderer.
 
 The :doc:`legacy gallery example <../generated/gallery/01_plot_dual_tmc2209>` loads the shared dual
-driver YAML, validates it, and exercises the DOT, JSON, and SVG renderers when
+driver YAML, validates it, and exercises the DOT, YAML, and SVG renderers when
 Sphinx builds the documentation. It displays the rendered graph and complete
-netlist JSON alongside their generating code. Rendering the graph requires
+netlist YAML alongside their generating code. Rendering the graph requires
 Graphviz to be installed separately, with its ``dot`` executable on ``PATH``;
 the Python wrapper is included in the ``docs`` extra.

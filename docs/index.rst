@@ -6,12 +6,12 @@ CircuitSpec
    :width: 240 px
    :align: center
 
-**Hardware specification as code.** Describe components and their connections
+**Hardware specification as code.** Describe components and their nets
 once, validate the typed port graph, and use that specification as the starting
 point for circuit artifacts.
 
 CircuitSpec is an early-stage tool. The current release supports YAML projects,
-basic connectivity validation, interactive Plotly graphs, DOT output, JSON netlists, and an
+basic connectivity validation, interactive Plotly graphs, DOT output, YAML netlists, and an
 illustrative stripboard connection map. Its renderings are not manufacturing
 outputs; review all hardware designs before building them.
 

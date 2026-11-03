@@ -12,7 +12,7 @@ import yaml
 
 from circuitspec.cli import main
 from circuitspec.io import SpecError, load_project
-from circuitspec.models import Connection, Endpoint, Project
+from circuitspec.models import Endpoint, Net, Project
 from circuitspec.renderers import render_graph, to_dot, to_netlist, to_stripboard_svg
 from circuitspec.validation import require_valid, validate
 
@@ -36,24 +36,17 @@ class TestPlotlyGraph(unittest.TestCase):
         self.project = load_project(EXAMPLE)
         require_valid(self.project)
 
-    def test_project_loads_named_nets_bus_and_power(self):
+    def test_project_loads_named_nets(self):
         self.assertIsInstance(self.project, Project)
-        self.assertEqual(self.project.nets["A_STEP"], [
+        nets = {net.name: net.endpoints for net in self.project.nets}
+        self.assertEqual(nets["A_STEP"], [
             Endpoint("controller", "GPIO38"), Endpoint("turntable", "STEP"),
         ])
-        self.assertEqual(len(self.project.buses["UART"]), 3)
+        self.assertEqual(len(nets["UART"]), 3)
         self.assertEqual(validate(self.project), [])
 
-    def test_nets_only_yaml_is_supported(self):
-        raw = yaml.safe_load(EXAMPLE.read_text(encoding="utf-8"))
-        raw["nets"]["UART"] = raw.pop("buses")["UART"]["members"]
-        raw["nets"].update(raw.pop("power"))
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "project.yaml"
-            path.write_text(yaml.safe_dump(raw), encoding="utf-8")
-            project = load_project(path)
-        require_valid(project)
-        figure = render_graph(project)
+    def test_unified_nets_retain_bus_and_power_styling(self):
+        figure = render_graph(self.project)
         traces = {trace.meta["kind"]: trace for trace in figure.data}
         self.assertIn("UART", traces["bus"].text)
         self.assertTrue(any("Bus: UART<br>Members: 3" in text
@@ -74,7 +67,8 @@ class TestPlotlyGraph(unittest.TestCase):
         self.assertIn("A_STEP", traces["net"].text)
         self.assertIn("UART", traces["bus"].text)
         self.assertIn("Bus: UART<br>Members: 3", traces["bus"].hovertext[0])
-        for endpoint in self.project.buses["UART"]:
+        uart = next(net for net in self.project.nets if net.name == "UART")
+        for endpoint in uart.endpoints:
             self.assertIn(str(endpoint), traces["bus"].hovertext[0])
         self.assertGreater(traces["bus"].marker.line.width, traces["net"].marker.line.width)
         self.assertNotEqual(traces["power"].marker.symbol, traces["net"].marker.symbol)
@@ -101,12 +95,7 @@ class TestPlotlyGraph(unittest.TestCase):
             self.assertIsNone(edge_trace.x[index + 2])
             self.assertIn("port", pair)
             self.assertEqual(len(pair), 2)
-        endpoints = [
-            endpoint
-            for groups in (self.project.nets, self.project.buses, self.project.power)
-            for members in groups.values()
-            for endpoint in members
-        ]
+        endpoints = [endpoint for net in self.project.nets for endpoint in net.endpoints]
         self.assertEqual(len(kinds), 2 * len(endpoints))
         self.assertEqual(
             sum(pair == {"instance", "port"} for pair in kinds),
@@ -119,18 +108,6 @@ class TestPlotlyGraph(unittest.TestCase):
     def test_layout_is_deterministic(self):
         self.assertEqual(render_graph(self.project).to_json(), render_graph(self.project).to_json())
 
-    def test_legacy_connections_reuse_ports(self):
-        self.project.nets.clear()
-        shared = Endpoint("controller", "GPIO38")
-        self.project.connections = [
-            Connection(shared, Endpoint("turntable", "STEP")),
-            Connection(Endpoint("camera_slide", "STEP"), shared),
-        ]
-        require_valid(self.project)
-        traces = {trace.meta["kind"]: trace for trace in render_graph(self.project).data}
-        self.assertEqual(list(traces["port"].text).count("GPIO38"), 1)
-        self.assertEqual(list(traces["net"].text), ["NET_1", "NET_2"])
-
     def test_empty_and_unconnected_projects_render(self):
         for instances in ({}, {"idle": "TMC2209"}):
             with self.subTest(instances=instances):
@@ -140,7 +117,7 @@ class TestPlotlyGraph(unittest.TestCase):
                 self.assertIsInstance(figure, go.Figure)
                 self.assertEqual(sum(len(trace.x) for trace in figure.data), len(instances))
 
-    def test_connection_net_types_match_named_net_types(self):
+    def test_net_types_control_graph_styling(self):
         cases = [
             ("signal", "GPIO38", "STEP", "net", "Net", "diamond"),
             ("bus", "UART", "UART", "bus", "Bus", "diamond"),
@@ -153,21 +130,12 @@ class TestPlotlyGraph(unittest.TestCase):
                     "right": "TMC2209",
                 }
                 members = [Endpoint("left", left_port), Endpoint("right", right_port)]
-                connection_project = Project(
-                    label, "0.1", instances,
-                    connections=[Connection(*members)],
-                )
-                named_project = Project(label, "0.1", instances, nets={"NET_1": members})
-                for project in (connection_project, named_project):
-                    require_valid(project)
-                figures = [render_graph(p) for p in (connection_project, named_project)]
-                traces = [
-                    next(trace for trace in figure.data if trace.meta["kind"] == kind)
-                    for figure in figures
-                ]
-                self.assertEqual(traces[0].to_plotly_json(), traces[1].to_plotly_json())
-                self.assertEqual(traces[0].marker.symbol, symbol)
-                self.assertIn(f"{title}: NET_1<br>Members: 2", traces[0].hovertext[0])
+                project = Project(label, "0.1", instances, nets=[Net("NET_1", members)])
+                require_valid(project)
+                figure = render_graph(project)
+                trace = next(trace for trace in figure.data if trace.meta["kind"] == kind)
+                self.assertEqual(trace.marker.symbol, symbol)
+                self.assertIn(f"{title}: NET_1<br>Members: 2", trace.hovertext[0])
 
     def test_html_export_is_standalone(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -185,8 +153,10 @@ class TestPlotlyGraph(unittest.TestCase):
     def test_named_nets_appear_in_existing_exports(self):
         self.assertIn("A_STEP", to_dot(self.project))
         self.assertIn("A_STEP", to_stripboard_svg(self.project))
-        nets = {net["name"]: net["members"] for net in to_netlist(self.project)["nets"]}
-        self.assertEqual(nets["A_STEP"], ["controller.GPIO38", "turntable.STEP"])
+        self.assertEqual(
+            to_netlist(self.project)["nets"]["A_STEP"],
+            ["controller.GPIO38", "turntable.STEP"],
+        )
 
     def test_cli_default_and_custom_html_outputs(self):
         with tempfile.TemporaryDirectory() as directory, contextlib.chdir(directory):
@@ -234,23 +204,33 @@ class TestPlotlyGraph(unittest.TestCase):
                     self.assertEqual(main(["render", output_format, str(EXAMPLE)]), 0)
                 self.assertIn(expected, stdout.getvalue())
 
+    def test_cli_exports_yaml_netlist(self):
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            self.assertEqual(main(["export", "netlist", str(EXAMPLE)]), 0)
+        exported = yaml.safe_load(stdout.getvalue())
+        self.assertEqual(
+            exported["nets"]["A_STEP"],
+            ["controller.GPIO38", "turntable.STEP"],
+        )
+        self.assertIn("UART", exported["nets"])
+
     def test_named_net_validation(self):
         cases = [
-            ({"bad": [Endpoint("missing", "STEP"), Endpoint("turntable", "STEP")]}, "unknown instance"),
-            ({"bad": [Endpoint("controller", "NO_PIN"), Endpoint("turntable", "STEP")]}, "unknown port"),
-            ({"bad": [Endpoint("turntable", "STEP")]}, "at least two"),
-            ({"bad": [Endpoint("turntable", "STEP")] * 2}, "duplicate endpoint"),
-            ({"bad": [Endpoint("controller", "3V3"), Endpoint("turntable", "STEP")]}, "incompatible port types"),
-            ({"UART": self.project.buses["UART"]}, "duplicate net name: UART"),
-            ({"GND": self.project.power["GND"]}, "duplicate net name: GND"),
+            (Net("bad", [Endpoint("missing", "STEP"), Endpoint("turntable", "STEP")]), "unknown instance"),
+            (Net("bad", [Endpoint("controller", "NO_PIN"), Endpoint("turntable", "STEP")]), "unknown port"),
+            (Net("bad", [Endpoint("turntable", "STEP")]), "at least two"),
+            (Net("bad", [Endpoint("turntable", "STEP")] * 2), "duplicate endpoint"),
+            (Net("bad", [Endpoint("controller", "3V3"), Endpoint("turntable", "STEP")]), "incompatible port types"),
+            (Net("bad", []), "must contain at least one endpoint"),
         ]
-        for nets, expected in cases:
-            with self.subTest(expected=expected, nets=nets):
-                self.project.nets = nets
+        for net, expected in cases:
+            with self.subTest(expected=expected, net=net):
+                self.project.nets = [net]
                 self.assertTrue(any(expected in error for error in validate(self.project)))
 
     def test_named_net_reassignment_is_reported(self):
-        self.project.nets["second"] = self.project.nets["A_STEP"]
+        first = next(net for net in self.project.nets if net.name == "A_STEP")
+        self.project.nets.append(Net("second", first.endpoints))
         self.assertTrue(any(
             "assigned to multiple nets" in error for error in validate(self.project)
         ))

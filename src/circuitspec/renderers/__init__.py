@@ -2,26 +2,37 @@
 
 from html import escape
 
-from circuitspec.models import Project
+from circuitspec.components import COMPONENTS
+from circuitspec.models import Endpoint, Project
 from circuitspec.renderers.plotly_graph import render_graph
 
 __all__ = ["render_graph", "to_dot", "to_netlist", "to_stripboard_svg"]
 
 
-def _connection_nets(project: Project) -> list[tuple[str, list[str]]]:
-    nets = [
-        (f"NET_{index}", [str(connection.source), str(connection.target)])
-        for index, connection in enumerate(project.connections, start=1)
+def _project_nets(project: Project) -> list[tuple[str, list[str]]]:
+    return [
+        (net.name, [str(endpoint) for endpoint in net.endpoints])
+        for net in project.nets
     ]
-    nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.nets.items())
-    nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.buses.items())
-    nets.extend((name, [str(endpoint) for endpoint in members]) for name, members in project.power.items())
-    return nets
 
 
 def _dot_quote(value: str) -> str:
     escaped = value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     return f'"{escaped}"'
+
+
+def _dot_net_style(project: Project, endpoints: list[Endpoint]) -> str:
+    kinds = set()
+    for endpoint in endpoints:
+        component = COMPONENTS.get(project.instances.get(endpoint.instance, ""))
+        port = component.ports.get(endpoint.port) if component else None
+        if port:
+            kinds.add(port.kind)
+    if kinds == {"power"}:
+        return ", color=red"
+    if "bus" in kinds:
+        return ", style=dashed"
+    return ""
 
 
 def to_dot(project: Project) -> str:
@@ -31,30 +42,13 @@ def to_dot(project: Project) -> str:
         label = f"{name}\n{component}"
         lines.append(f"  {_dot_quote(name)} [label={_dot_quote(label)}];")
 
-    for index, connection in enumerate(project.connections, start=1):
-        lines.append(
-            f"  {_dot_quote(connection.source.instance)} -- "
-            f"{_dot_quote(connection.target.instance)} "
-            f"[label={_dot_quote(f'{connection.source.port} - {connection.target.port}')}, "
-            f'id="connection{index}"];'
-        )
-    for net, members in project.nets.items():
-        for endpoint in members[1:]:
+    for net in project.nets:
+        for endpoint in net.endpoints[1:]:
             lines.append(
-                f"  {_dot_quote(members[0].instance)} -- {_dot_quote(endpoint.instance)} "
-                f"[label={_dot_quote(net)}];"
-            )
-    for bus, members in project.buses.items():
-        for endpoint in members[1:]:
-            lines.append(
-                f"  {_dot_quote(members[0].instance)} -- {_dot_quote(endpoint.instance)} "
-                f"[label={_dot_quote(bus)}, style=dashed];"
-            )
-    for net, members in project.power.items():
-        for endpoint in members[1:]:
-            lines.append(
-                f"  {_dot_quote(members[0].instance)} -- {_dot_quote(endpoint.instance)} "
-                f"[label={_dot_quote(net)}, color=red];"
+                f"  {_dot_quote(net.endpoints[0].instance)} -- "
+                f"{_dot_quote(endpoint.instance)} "
+                f"[label={_dot_quote(net.name)}"
+                f"{_dot_net_style(project, net.endpoints)}];"
             )
     lines.append("}")
     return "\n".join(lines) + "\n"
@@ -62,7 +56,7 @@ def to_dot(project: Project) -> str:
 
 def to_stripboard_svg(project: Project) -> str:
     """Render a labeled stripboard-style connection map as SVG."""
-    nets = _connection_nets(project)
+    nets = _project_nets(project)
     width = max(600, len(project.instances) * 190 + 160)
     row_height = 54
     height = max(100, 70 + len(nets) * row_height)
@@ -102,16 +96,6 @@ def to_stripboard_svg(project: Project) -> str:
     return "\n".join(parts) + "\n"
 
 
-def to_netlist(project: Project) -> dict:
-    """Return a JSON-serializable netlist representation."""
-    return {
-        "project": {"name": project.name, "version": project.version},
-        "components": [
-            {"reference": name, "component": component}
-            for name, component in project.instances.items()
-        ],
-        "nets": [
-            {"name": name, "members": members}
-            for name, members in _connection_nets(project)
-        ],
-    }
+def to_netlist(project: Project) -> dict[str, dict[str, list[str]]]:
+    """Return net names mapped to their endpoint references."""
+    return {"nets": {name: members for name, members in _project_nets(project)}}

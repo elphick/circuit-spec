@@ -1,9 +1,10 @@
 """Command-line interface for CircuitSpec."""
 
 import argparse
-import json
 import sys
 from pathlib import Path
+
+import yaml
 
 from circuitspec.io import SpecError, load_project
 from circuitspec.models import Project
@@ -64,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
                 renderers = {"dot": to_dot, "stripboard": to_stripboard_svg}
                 _write(args.output, renderers[args.format](project))
         else:
-            _write(args.output, json.dumps(to_netlist(project), indent=2) + "\n")
+            _write(args.output, yaml.safe_dump(to_netlist(project), sort_keys=False))
     except (OSError, SpecError, RuntimeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

@@ -1,7 +1,7 @@
 # CircuitSpec
 
-Hardware specification as code. Define components and typed-port connections in
-YAML, validate them, then export a graph or a machine-readable netlist.
+Hardware specification as code. Define components and typed-port nets in YAML,
+validate them, then export a graph or a machine-readable netlist.
 
 ## Quick start
 
@@ -13,8 +13,8 @@ instances:
     component: ESP32_S3_ETH_POE
   driver:
     component: TMC2209
-connections:
-  - controller.GPIO38 -> driver.STEP
+nets:
+  STEP: [controller.GPIO38, driver.STEP]
 ```
 
 Install the package with UV and validate or export the included example:
@@ -26,18 +26,19 @@ uv run circuitspec render graph examples/dual_tmc2209.yaml
 uv run circuitspec render graph examples/dual_tmc2209.yaml --png artifacts/project_graph.png --svg artifacts/project_graph.svg
 uv run circuitspec render dot examples/dual_tmc2209.yaml -o circuit.dot
 uv run circuitspec render stripboard examples/dual_tmc2209.yaml -o stripboard.svg
-uv run circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.json
+uv run circuitspec export netlist examples/dual_tmc2209.yaml -o netlist.yaml
 ```
 
 The initial built-in library contains `ESP32_S3_ETH_POE` and `TMC2209`.
-Connections, named nets, multi-member buses, and power nets are checked against
-the component ports. Graph output is standalone, offline Plotly HTML at
+Nets, including signal, bus, and power nets, are checked against component
+ports. Graph output is standalone, offline Plotly HTML at
 `artifacts/project_graph.html` (override with `--output`). Components, connected
-ports, nets, buses, and power rails are visible, with undirected edges and hover
-details. This shows logical connectivity, not signal flow or physical placement.
+ports, and nets are visible; bus and power nets have distinct styling. Edges
+are undirected and include hover details. This shows logical connectivity, not
+signal flow or physical placement.
 Kaleido exports PNG/SVG and requires Chrome; if needed, run
 `uv run plotly_get_chrome` once before exporting images. HTML rendering does not
-require Chrome. DOT export remains available with `render dot`; netlists are JSON.
+require Chrome. DOT export remains available with `render dot`; netlists are YAML.
 The SVG stripboard view is an illustrative connectivity map, not a manufacturing-ready
 layout; verify clearances, cuts, and component footprints before building hardware.
 

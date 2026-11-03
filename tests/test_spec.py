@@ -1,9 +1,9 @@
-import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from circuitspec.io import SpecError, load_project
+from circuitspec.models import Endpoint, Net, Project
 from circuitspec.renderers import to_dot, to_netlist, to_stripboard_svg
 from circuitspec.validation import validate
 
@@ -26,8 +26,8 @@ class TestCircuitSpec(unittest.TestCase):
             spec.write_text(
                 "instances:\n  controller:\n    component: ESP32_S3_ETH_POE\n"
                 "  driver:\n    component: TMC2209\n"
-                "connections:\n  - controller.NOT_A_PIN -> driver.STEP\n"
-                "  - controller.GPIO1 -> missing.STEP\n",
+                "nets:\n  first: [controller.NOT_A_PIN, driver.STEP]\n"
+                "  second: [controller.GPIO1, missing.STEP]\n",
                 encoding="utf-8",
             )
 
@@ -48,13 +48,13 @@ class TestCircuitSpec(unittest.TestCase):
             with self.assertRaisesRegex(SpecError, "duplicate key"):
                 load_project(spec)
 
-    def test_connection_type_mismatch_is_reported(self):
+    def test_net_type_mismatch_is_reported(self):
         with tempfile.TemporaryDirectory() as directory:
             spec = Path(directory) / "mismatch.yaml"
             spec.write_text(
                 "instances:\n  controller:\n    component: ESP32_S3_ETH_POE\n"
                 "  driver:\n    component: TMC2209\n"
-                "connections:\n  - controller.3V3 -> driver.STEP\n",
+                "nets:\n  mismatch: [controller.3V3, driver.STEP]\n",
                 encoding="utf-8",
             )
 
@@ -63,31 +63,38 @@ class TestCircuitSpec(unittest.TestCase):
         self.assertTrue(any("incompatible port types" in error for error in errors))
 
     def test_duplicate_named_nets_are_reported(self):
-        with tempfile.TemporaryDirectory() as directory:
-            spec = Path(directory) / "duplicate-nets.yaml"
-            spec.write_text(
-                "instances:\n  controller:\n    component: ESP32_S3_ETH_POE\n"
-                "  driver:\n    component: TMC2209\n"
-                "buses:\n  shared:\n    members: [controller.GPIO40, driver.UART]\n"
-                "power:\n  shared: [controller.3V3, driver.VDD]\n",
-                encoding="utf-8",
-            )
+        project = Project(
+            "duplicate", "0.1",
+            {"controller": "ESP32_S3_ETH_POE", "driver": "TMC2209"},
+            [
+                Net("shared", [Endpoint("controller", "GPIO40"), Endpoint("driver", "UART")]),
+                Net("shared", [Endpoint("controller", "3V3"), Endpoint("driver", "VDD")]),
+            ],
+        )
 
-            errors = validate(load_project(spec))
+        self.assertIn("duplicate net name: shared", validate(project))
 
-        self.assertIn("duplicate net name: shared", errors)
-
-    def test_renderers_include_connections_and_power_nets(self):
+    def test_renderers_include_nets(self):
         project = load_project(EXAMPLE)
 
         self.assertIn('"controller" -- "turntable"', to_dot(project))
+        self.assertIn("style=dashed", to_dot(project))
+        self.assertIn("color=red", to_dot(project))
         netlist = to_netlist(project)
-        self.assertTrue(any(net["name"] == "24V" for net in netlist["nets"]))
+        self.assertIn("24V", netlist["nets"])
         layout = to_stripboard_svg(project)
         self.assertIn("Illustrative layout", layout)
         self.assertIn("controller", layout)
         self.assertIn("GPIO38", layout)
-        self.assertEqual(
-            json.loads(json.dumps(netlist))["components"][0]["reference"],
-            "controller",
+        self.assertEqual(netlist["nets"]["A_STEP"], ["controller.GPIO38", "turntable.STEP"])
+
+    def test_empty_and_duplicate_endpoint_nets_are_rejected(self):
+        project = Project(
+            "invalid", "0.1", {},
+            [Net("empty", []), Net("duplicate", [
+                Endpoint("missing", "PIN"), Endpoint("missing", "PIN"),
+            ])],
         )
+        errors = validate(project)
+        self.assertTrue(any("empty: must contain" in error for error in errors))
+        self.assertTrue(any("duplicate endpoint" in error for error in errors))

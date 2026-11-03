@@ -12,10 +12,10 @@ class Endpoint:
         return f"{self.instance}.{self.port}"
 
 
-@dataclass(frozen=True)
-class Connection:
-    source: Endpoint
-    target: Endpoint
+@dataclass
+class Net:
+    name: str
+    endpoints: list[Endpoint]
 
 
 @dataclass
@@ -23,7 +23,4 @@ class Project:
     name: str
     version: str
     instances: dict[str, str]
-    connections: list[Connection] = field(default_factory=list)
-    buses: dict[str, list[Endpoint]] = field(default_factory=dict)
-    power: dict[str, list[Endpoint]] = field(default_factory=dict)
-    nets: dict[str, list[Endpoint]] = field(default_factory=dict)
+    nets: list[Net] = field(default_factory=list)

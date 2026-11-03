@@ -5,8 +5,8 @@ Glossary
    :sorted:
 
    Bus
-      A named group of two or more endpoints that share a communication or
-      signal path, such as the UART members in the dual-driver example.
+      A net used for a shared communication or signal path, such as UART in the
+      dual-driver example.
 
    Component
       A reusable hardware definition that declares a set of named ports.
@@ -20,22 +20,20 @@ Glossary
       contain multiple instances of the same component.
 
    Net
-      A set of connected endpoints. In CircuitSpec, a pairwise connection is
-      represented as a net in the exported netlist; buses and power nets have
-      explicit names.
+      A named set of two or more electrically connected endpoints.
 
    Port
       A named connection point exposed by a component, with a declared type and
       direction.
 
    Power net
-      A named group of power ports connected to a common supply or reference,
-      for example ``24V`` or ``GND``.
+      A net connecting power ports to a common supply or reference, for example
+      ``24V`` or ``GND``.
 
    Project
       The complete YAML description of a hardware system, including metadata,
-      component instances, connections, buses, and power nets.
+      component instances, and nets.
 
    Typed port graph
-      A graph model whose connection endpoints are component ports with types
-      and directions, allowing structural checks before rendering outputs.
+      A graph model whose net endpoints are component ports with types and
+      directions, allowing structural checks before rendering outputs.

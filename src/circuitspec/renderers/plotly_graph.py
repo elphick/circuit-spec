@@ -49,19 +49,9 @@ def render_graph(project: Project) -> go.Figure:
         )
 
     nets = [
-        (
-            _net_kind(project, [connection.source, connection.target]),
-            f"NET_{index}",
-            [connection.source, connection.target],
-        )
-        for index, connection in enumerate(project.connections, start=1)
+        (_net_kind(project, net.endpoints), net.name, net.endpoints)
+        for net in project.nets
     ]
-    nets.extend(
-        (_net_kind(project, members), name, members)
-        for name, members in project.nets.items()
-    )
-    nets.extend(("bus", name, members) for name, members in project.buses.items())
-    nets.extend(("power", name, members) for name, members in project.power.items())
     titles = {"net": "Net", "bus": "Bus", "power": "Power Net"}
     for index, (kind, name, members) in enumerate(nets):
         net_id = (kind, index)
